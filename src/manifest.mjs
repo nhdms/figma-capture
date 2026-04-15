@@ -1,7 +1,7 @@
 /**
  * Shared helpers for building a `pages` manifest, used by:
- *   - bin/export-pages.mjs (Next.js scanner)
- *   - bin/batch.mjs        (--sitemap / --routes input modes)
+ *   - src/commands/export-pages.mjs (Next.js scanner)
+ *   - src/commands/batch.mjs        (--sitemap / --routes input modes)
  *
  * A manifest looks like:
  *   {
