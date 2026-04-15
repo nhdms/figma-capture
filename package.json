@@ -1,6 +1,6 @@
 {
   "name": "figma-capture",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Capture web pages into a Figma file from your terminal — uses the Figma MCP server and Playwright.",
   "type": "module",
   "license": "MIT",
