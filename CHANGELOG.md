@@ -6,6 +6,15 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-04-15
+
+### Added
+- README "For AI coding agents" section so Claude Code, Codex, Cursor,
+  and similar agents can detect when this tool fits the user's request
+  and self-install + self-use without prompting (trigger phrases,
+  subcommand decision table, `fileKey` extraction rules, parallel
+  patterns, explicit don'ts).
+
 ## [0.1.0] - 2026-04-15
 
 Initial public release.
