@@ -1,0 +1,14 @@
+node_modules/
+.omc/
+.DS_Store
+*.log
+.env
+.env.*
+
+# User-generated artifacts
+pages.json
+pages.*.status.json
+*.status.json
+
+# Local OAuth cache (resolved per-user under ~/.figma-capture)
+.figma-capture/

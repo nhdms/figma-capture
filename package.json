@@ -1,0 +1,64 @@
+{
+  "name": "figma-capture",
+  "version": "0.1.0",
+  "description": "Capture web pages into a Figma file from your terminal — uses the Figma MCP server and Playwright.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Duc <mr.minh97@gmail.com>",
+  "homepage": "https://github.com/nhdms/figma-capture#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nhdms/figma-capture.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nhdms/figma-capture/issues"
+  },
+  "keywords": [
+    "figma",
+    "figma-mcp",
+    "mcp",
+    "playwright",
+    "screenshot",
+    "html-to-figma",
+    "design-to-figma",
+    "web-to-figma",
+    "cli"
+  ],
+  "engines": {
+    "node": ">=18.17"
+  },
+  "bin": {
+    "figma-capture": "./bin/cli.mjs",
+    "figma-capture-batch": "./bin/batch.mjs",
+    "figma-capture-export-pages": "./bin/export-pages.mjs"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "start": "node ./bin/cli.mjs",
+    "test:syntax": "node --check bin/cli.mjs && node --check bin/batch.mjs && node --check bin/export-pages.mjs && node --check src/browser.mjs && node --check src/capture.mjs && node --check src/claude-tokens.mjs && node --check src/figma-arrange.mjs && node --check src/mcp.mjs",
+    "test:help": "node ./bin/cli.mjs --help && node ./bin/batch.mjs --help && node ./bin/export-pages.mjs --help",
+    "prepublishOnly": "npm run test:syntax && npm run test:help"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "commander": "^12.1.0",
+    "open": "^10.1.0"
+  },
+  "peerDependencies": {
+    "playwright": ">=1.40.0"
+  },
+  "peerDependenciesMeta": {
+    "playwright": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "playwright": "^1.58.2"
+  }
+}
