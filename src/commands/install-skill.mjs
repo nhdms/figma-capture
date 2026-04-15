@@ -1,46 +1,36 @@
-#!/usr/bin/env node
 /**
- * Install the figma-capture Claude Code skill so Claude Code can drive
- * this CLI without you having to explain it every time.
+ * Installs the figma-capture Claude Code skill so Claude Code can drive
+ * this CLI without you having to explain it every conversation.
  *
  * Default destination: ~/.claude/skills/figma-capture/SKILL.md
- *
- * Usage:
- *   figma-capture-install-skill            # install / update at default path
- *   figma-capture-install-skill --dest <dir>
- *   figma-capture-install-skill --project  # install at ./.claude/skills/figma-capture/
- *   figma-capture-install-skill --print    # print SKILL.md to stdout (for piping)
- *   figma-capture-install-skill --force    # overwrite without prompting
  */
-import { Command } from 'commander';
 import { mkdir, copyFile, access, readFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { homedir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const SOURCE = path.resolve(__dirname, '..', 'skills', 'figma-capture', 'SKILL.md');
+const SOURCE = fileURLToPath(
+  new URL('../../skills/figma-capture/SKILL.md', import.meta.url)
+);
 
-const program = new Command();
-program
-  .name('figma-capture-install-skill')
-  .description('Install the figma-capture Claude Code skill (SKILL.md)')
-  .option('--dest <dir>', 'Destination directory containing SKILL.md (overrides default)')
-  .option('--project', 'Install into ./.claude/skills/figma-capture/ instead of ~/.claude/...')
-  .option('--print', 'Print SKILL.md to stdout instead of installing')
-  .option('--force', 'Overwrite without prompting if SKILL.md already exists')
-  .parse(process.argv);
-
-const opts = program.opts();
+export function registerInstallSkill(program) {
+  program
+    .command('install-skill')
+    .description('Install the figma-capture Claude Code skill (SKILL.md)')
+    .option('--dest <dir>', 'Destination directory containing SKILL.md (overrides default)')
+    .option('--project', 'Install into ./.claude/skills/figma-capture/ instead of ~/.claude/...')
+    .option('--print', 'Print SKILL.md to stdout instead of installing')
+    .option('--force', 'Overwrite without prompting if SKILL.md already exists')
+    .action(runInstallSkill);
+}
 
 async function exists(p) {
   try { await access(p, constants.F_OK); return true; }
   catch { return false; }
 }
 
-async function main() {
+async function runInstallSkill(opts) {
   if (!(await exists(SOURCE))) {
     console.error(`[install-skill] source SKILL.md missing: ${SOURCE}`);
     console.error('  This usually means the package was installed without the skills/ dir.');
@@ -74,8 +64,3 @@ async function main() {
   console.log(`[install-skill] ${already ? 'updated' : 'installed'}: ${destFile}`);
   console.log('[install-skill] Restart Claude Code (or open a new session) for it to pick up the skill.');
 }
-
-main().catch((e) => {
-  console.error('[install-skill] error:', e?.message ?? e);
-  process.exit(1);
-});

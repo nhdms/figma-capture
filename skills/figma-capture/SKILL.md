@@ -11,17 +11,17 @@ server and Playwright. Three binaries:
 | Binary | Use when |
 |---|---|
 | `figma-capture` | A single URL. |
-| `figma-capture-batch` | Many URLs — auto-discover via sitemap, pass inline, or use a `pages.json`. |
-| `figma-capture-export-pages` | The user is on Next.js App Router and wants a manifest first. |
+| `figma-capture batch` | Many URLs — auto-discover via sitemap, pass inline, or use a `pages.json`. |
+| `figma-capture export-pages` | The user is on Next.js App Router and wants a manifest first. |
 
 ## How to invoke
 
 **Always pick the lowest-friction mode for the user's input:**
 
 1. User gives **one URL** → `figma-capture <url> --file <fileKey>`
-2. User says "the whole site" / has a **sitemap** → `figma-capture-batch --file <key> --sitemap <sitemapUrl>`
-3. User lists a **handful of routes** → `figma-capture-batch --file <key> --base-url <url> --routes "/a,/b,/c"`
-4. User has a **Next.js app** AND wants to edit the manifest before capture → `figma-capture-export-pages` then `figma-capture-batch --manifest pages.json`
+2. User says "the whole site" / has a **sitemap** → `figma-capture batch --file <key> --sitemap <sitemapUrl>`
+3. User lists a **handful of routes** → `figma-capture batch --file <key> --base-url <url> --routes "/a,/b,/c"`
+4. User has a **Next.js app** AND wants to edit the manifest before capture → `figma-capture export-pages` then `figma-capture batch --manifest pages.json`
 
 Do **not** ask the user to write `pages.json` by hand unless they specifically want manifest-based control.
 
@@ -32,7 +32,7 @@ own Playwright Chromium, so concurrency 4–6 is the practical sweet spot
 on a typical dev machine. Example:
 
 ```
-figma-capture-batch --file <key> --sitemap http://localhost:3000/sitemap.xml --concurrency 4
+figma-capture batch --file <key> --sitemap http://localhost:3000/sitemap.xml --concurrency 4
 ```
 
 For ad-hoc parallel single-page captures, run multiple `figma-capture`
@@ -96,9 +96,9 @@ figma-capture <url> --file <fileKey>
   [--no-poll]                        submit and exit without polling
 ```
 
-### `figma-capture-batch`
+### `figma-capture batch`
 ```
-figma-capture-batch
+figma-capture batch
   # Pick ONE input mode:
   --manifest <file>                  pages.json
   --sitemap <url>                    sitemap.xml URL
@@ -118,9 +118,9 @@ figma-capture-batch
   --append-existing                  append to existing Figma pages instead of creating new ones
 ```
 
-### `figma-capture-export-pages` (Next.js App Router)
+### `figma-capture export-pages` (Next.js App Router)
 ```
-figma-capture-export-pages
+figma-capture export-pages
   --root <dir>                       path to the project containing app/
   --base-url <url>
   --file <fileKey>

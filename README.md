@@ -7,14 +7,14 @@
 server, a staging environment, or any public site you have permission to
 capture — into a real, editable frame inside a Figma file.
 
-It ships three binaries:
+One binary, four subcommands:
 
-| Binary | Purpose |
+| Command | Purpose |
 |---|---|
-| `figma-capture` | Capture a single URL into a Figma file. |
-| `figma-capture-batch` | Capture many pages — from a sitemap, an inline route list, or a `pages.json`. Retry, resume, parallel workers. |
-| `figma-capture-export-pages` | Walk a Next.js App Router `app/` directory and emit a `pages.json` manifest. |
-| `figma-capture-install-skill` | Install a Claude Code skill so Claude Code can drive the CLI without prompting. |
+| `figma-capture <url>` | Capture a single URL into a Figma file. |
+| `figma-capture batch` | Capture many pages — from a sitemap, an inline route list, or a `pages.json`. Retry, resume, parallel workers. |
+| `figma-capture export-pages` | Walk a Next.js App Router `app/` directory and emit a `pages.json` manifest. |
+| `figma-capture install-skill` | Install a Claude Code skill so Claude Code can drive the CLI without prompting. |
 
 ## Why
 
@@ -122,7 +122,7 @@ figma-capture <url> --file <fileKey> [options]
 
 ## Batch capture
 
-`figma-capture-batch` accepts three input modes — pick the one that
+`figma-capture batch` accepts three input modes — pick the one that
 matches your situation. **No `pages.json` required for the first two.**
 
 ### 1. Sitemap auto-discovery (any framework)
@@ -131,7 +131,7 @@ If your site exposes a `sitemap.xml` (Next.js, Astro, Remix, WordPress,
 plain HTML, …), this is the lowest-friction path:
 
 ```sh
-figma-capture-batch \
+figma-capture batch \
   --file <FIGMA_FILE_KEY> \
   --sitemap http://localhost:3000/sitemap.xml \
   --concurrency 4
@@ -146,7 +146,7 @@ URLs from a different origin than the resolved base are skipped — pass
 Best for quick smoke tests or apps without a sitemap:
 
 ```sh
-figma-capture-batch \
+figma-capture batch \
   --file <FIGMA_FILE_KEY> \
   --base-url http://localhost:3000 \
   --routes "/,/dashboard,/billing,/settings/profile"
@@ -157,14 +157,14 @@ figma-capture-batch \
 For Next.js projects, generate a starting manifest and edit it freely:
 
 ```sh
-figma-capture-export-pages \
+figma-capture export-pages \
   --root ./my-next-app \
   --base-url http://localhost:3000 \
   --file <FIGMA_FILE_KEY> \
   --mobile-modules "consumer,auth" \
   --out pages.json
 
-figma-capture-batch --manifest pages.json --concurrency 4
+figma-capture batch --manifest pages.json --concurrency 4
 ```
 
 You can also hand-write `pages.json` for any framework.
@@ -183,9 +183,9 @@ Install the bundled skill so Claude Code can drive this CLI on the
 user's behalf without you having to explain it every conversation:
 
 ```sh
-figma-capture-install-skill              # → ~/.claude/skills/figma-capture/SKILL.md
-figma-capture-install-skill --project    # → ./.claude/skills/figma-capture/SKILL.md
-figma-capture-install-skill --print      # stream SKILL.md to stdout
+figma-capture install-skill              # → ~/.claude/skills/figma-capture/SKILL.md
+figma-capture install-skill --project    # → ./.claude/skills/figma-capture/SKILL.md
+figma-capture install-skill --print      # stream SKILL.md to stdout
 ```
 
 Restart Claude Code afterwards. The skill teaches Claude when to use

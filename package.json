@@ -28,10 +28,7 @@
     "node": ">=18.17"
   },
   "bin": {
-    "figma-capture": "./bin/cli.mjs",
-    "figma-capture-batch": "./bin/batch.mjs",
-    "figma-capture-export-pages": "./bin/export-pages.mjs",
-    "figma-capture-install-skill": "./bin/install-skill.mjs"
+    "figma-capture": "./bin/cli.mjs"
   },
   "files": [
     "bin/",
@@ -43,8 +40,8 @@
   ],
   "scripts": {
     "start": "node ./bin/cli.mjs",
-    "test:syntax": "node --check bin/cli.mjs && node --check bin/batch.mjs && node --check bin/export-pages.mjs && node --check bin/install-skill.mjs && node --check src/browser.mjs && node --check src/capture.mjs && node --check src/claude-tokens.mjs && node --check src/figma-arrange.mjs && node --check src/manifest.mjs && node --check src/mcp.mjs",
-    "test:help": "node ./bin/cli.mjs --help && node ./bin/batch.mjs --help && node ./bin/export-pages.mjs --help && node ./bin/install-skill.mjs --help",
+    "test:syntax": "node --check bin/cli.mjs && node --check src/browser.mjs && node --check src/capture.mjs && node --check src/claude-tokens.mjs && node --check src/figma-arrange.mjs && node --check src/manifest.mjs && node --check src/mcp.mjs && node --check src/commands/capture.mjs && node --check src/commands/batch.mjs && node --check src/commands/export-pages.mjs && node --check src/commands/install-skill.mjs",
+    "test:help": "node ./bin/cli.mjs --help && node ./bin/cli.mjs batch --help && node ./bin/cli.mjs export-pages --help && node ./bin/cli.mjs install-skill --help",
     "prepublishOnly": "npm run test:syntax && npm run test:help"
   },
   "dependencies": {

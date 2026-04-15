@@ -6,29 +6,22 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added
-- `figma-capture-batch` now accepts three input modes:
-  `--manifest <file>`, `--sitemap <url>`, or `--routes <list>` —
-  no `pages.json` required for the latter two.
-- `--concurrency <n>` flag on batch (1–8 parallel workers, each in its
-  own Playwright Chromium).
-- New `figma-capture-install-skill` binary plus a bundled
-  `skills/figma-capture/SKILL.md` so Claude Code can drive the CLI
-  without prompting.
-- New `src/manifest.mjs` module exporting `manifestFromSitemap`,
-  `manifestFromRoutes`, and shared route → page-entry helpers.
-
 ## [0.1.0] - 2026-04-15
 
 Initial public release.
 
 ### Added
-- `figma-capture` CLI: capture a single web page into a Figma file via the
-  hosted Figma MCP and a Playwright-driven Chromium.
-- `figma-capture-batch` CLI: capture every page in a `pages.json` manifest
-  with retry/resume and per-page placement on fresh Figma pages.
-- `figma-capture-export-pages` CLI: emit a `pages.json` manifest by walking
-  a Next.js App Router `app/` directory.
+- Single `figma-capture` binary with four subcommands:
+  - `figma-capture <url> --file <key>` — capture one URL (default).
+  - `figma-capture batch` — batch capture with three input modes:
+    `--manifest <file>`, `--sitemap <url>`, or `--routes <list>`. No
+    `pages.json` required for the latter two. Supports retry, resume,
+    and `--concurrency <n>` (1–8 parallel workers).
+  - `figma-capture export-pages` — walk a Next.js App Router `app/`
+    directory and emit a `pages.json` manifest.
+  - `figma-capture install-skill` — install the bundled Claude Code skill
+    (`skills/figma-capture/SKILL.md`) so Claude Code can drive the CLI
+    without prompting.
 - Three viewport presets (`mobile`, `tablet`, `desktop`) with pinned
   dimensions so every captured frame lands at a consistent size.
 - macOS keychain reuse: if Claude Code has already authenticated to the
