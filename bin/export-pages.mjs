@@ -17,6 +17,14 @@ import { Command } from 'commander';
 import { readdir, writeFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
+import {
+  humanName,
+  moduleName,
+  figmaPageForModule,
+  viewportForModule,
+  isDynamic,
+} from '../src/manifest.mjs';
+
 const program = new Command();
 program
   .name('export-pages')
@@ -62,47 +70,6 @@ function fileToRoute(absFile, appRoot) {
   // Strip route groups: (foo) is NOT part of the URL
   const urlSegs = segments.filter((s) => !/^\(.+\)$/.test(s));
   return '/' + urlSegs.join('/').replace(/^\/?$/, '');
-}
-
-function isDynamic(route) {
-  return /\[[^\]]+\]/.test(route);
-}
-
-function prettifySegment(s) {
-  return s
-    .split('-')
-    .map((w) => (w.length === 0 ? '' : w[0].toUpperCase() + w.slice(1)))
-    .join(' ');
-}
-
-function humanName(route) {
-  const parts = route.split('/').filter(Boolean);
-  if (parts.length === 0) return 'Root';
-  // Preserve [param] as {param} for readability
-  return parts
-    .map((p) => (p.startsWith('[') ? `{${p.slice(1, -1)}}` : prettifySegment(p)))
-    .join(' / ');
-}
-
-function moduleName(route) {
-  const parts = route.split('/').filter(Boolean);
-  return parts[0] ?? '_root';
-}
-
-function figmaPageForModule(mod) {
-  // Use dedicated "Captures" pages so we never mutate hand-crafted pages like
-  // "Business web" / "Consumer App Screens". Users can override per-entry in
-  // the manifest after export if they want a different target.
-  if (mod === '_root') return 'Root — Captures';
-  return `${prettifySegment(mod)} — Captures`;
-}
-
-function viewportForModule(mod, mobileSet, tabletSet) {
-  // Defaults to desktop. Pass --mobile-modules / --tablet-modules to override
-  // per top-level module, or edit pages.json after export.
-  if (mobileSet.has(mod)) return 'mobile';
-  if (tabletSet.has(mod)) return 'tablet';
-  return 'desktop';
 }
 
 async function main() {

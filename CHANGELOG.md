@@ -6,6 +6,18 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- `figma-capture-batch` now accepts three input modes:
+  `--manifest <file>`, `--sitemap <url>`, or `--routes <list>` —
+  no `pages.json` required for the latter two.
+- `--concurrency <n>` flag on batch (1–8 parallel workers, each in its
+  own Playwright Chromium).
+- New `figma-capture-install-skill` binary plus a bundled
+  `skills/figma-capture/SKILL.md` so Claude Code can drive the CLI
+  without prompting.
+- New `src/manifest.mjs` module exporting `manifestFromSitemap`,
+  `manifestFromRoutes`, and shared route → page-entry helpers.
+
 ## [0.1.0] - 2026-04-15
 
 Initial public release.

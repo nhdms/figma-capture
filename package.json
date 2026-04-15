@@ -4,7 +4,7 @@
   "description": "Capture web pages into a Figma file from your terminal — uses the Figma MCP server and Playwright.",
   "type": "module",
   "license": "MIT",
-  "author": "Duc <mr.minh97@gmail.com>",
+  "author": "Duc",
   "homepage": "https://github.com/nhdms/figma-capture#readme",
   "repository": {
     "type": "git",
@@ -30,19 +30,21 @@
   "bin": {
     "figma-capture": "./bin/cli.mjs",
     "figma-capture-batch": "./bin/batch.mjs",
-    "figma-capture-export-pages": "./bin/export-pages.mjs"
+    "figma-capture-export-pages": "./bin/export-pages.mjs",
+    "figma-capture-install-skill": "./bin/install-skill.mjs"
   },
   "files": [
     "bin/",
     "src/",
+    "skills/",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
   ],
   "scripts": {
     "start": "node ./bin/cli.mjs",
-    "test:syntax": "node --check bin/cli.mjs && node --check bin/batch.mjs && node --check bin/export-pages.mjs && node --check src/browser.mjs && node --check src/capture.mjs && node --check src/claude-tokens.mjs && node --check src/figma-arrange.mjs && node --check src/mcp.mjs",
-    "test:help": "node ./bin/cli.mjs --help && node ./bin/batch.mjs --help && node ./bin/export-pages.mjs --help",
+    "test:syntax": "node --check bin/cli.mjs && node --check bin/batch.mjs && node --check bin/export-pages.mjs && node --check bin/install-skill.mjs && node --check src/browser.mjs && node --check src/capture.mjs && node --check src/claude-tokens.mjs && node --check src/figma-arrange.mjs && node --check src/manifest.mjs && node --check src/mcp.mjs",
+    "test:help": "node ./bin/cli.mjs --help && node ./bin/batch.mjs --help && node ./bin/export-pages.mjs --help && node ./bin/install-skill.mjs --help",
     "prepublishOnly": "npm run test:syntax && npm run test:help"
   },
   "dependencies": {

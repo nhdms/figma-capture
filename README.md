@@ -12,8 +12,9 @@ It ships three binaries:
 | Binary | Purpose |
 |---|---|
 | `figma-capture` | Capture a single URL into a Figma file. |
-| `figma-capture-batch` | Capture every page in a `pages.json` manifest. Retry, resume, place on fresh Figma pages. |
+| `figma-capture-batch` | Capture many pages — from a sitemap, an inline route list, or a `pages.json`. Retry, resume, parallel workers. |
 | `figma-capture-export-pages` | Walk a Next.js App Router `app/` directory and emit a `pages.json` manifest. |
+| `figma-capture-install-skill` | Install a Claude Code skill so Claude Code can drive the CLI without prompting. |
 
 ## Why
 
@@ -121,10 +122,41 @@ figma-capture <url> --file <fileKey> [options]
 
 ## Batch capture
 
-Generate a manifest from a Next.js project and capture every page:
+`figma-capture-batch` accepts three input modes — pick the one that
+matches your situation. **No `pages.json` required for the first two.**
+
+### 1. Sitemap auto-discovery (any framework)
+
+If your site exposes a `sitemap.xml` (Next.js, Astro, Remix, WordPress,
+plain HTML, …), this is the lowest-friction path:
 
 ```sh
-# 1. Walk app/ → pages.json
+figma-capture-batch \
+  --file <FIGMA_FILE_KEY> \
+  --sitemap http://localhost:3000/sitemap.xml \
+  --concurrency 4
+```
+
+Sitemap indexes (nested `<sitemap>` entries) are followed automatically.
+URLs from a different origin than the resolved base are skipped — pass
+`--base-url` to override the origin used for filtering.
+
+### 2. Inline routes (one-liner, no file)
+
+Best for quick smoke tests or apps without a sitemap:
+
+```sh
+figma-capture-batch \
+  --file <FIGMA_FILE_KEY> \
+  --base-url http://localhost:3000 \
+  --routes "/,/dashboard,/billing,/settings/profile"
+```
+
+### 3. Manifest file (full control)
+
+For Next.js projects, generate a starting manifest and edit it freely:
+
+```sh
 figma-capture-export-pages \
   --root ./my-next-app \
   --base-url http://localhost:3000 \
@@ -132,18 +164,33 @@ figma-capture-export-pages \
   --mobile-modules "consumer,auth" \
   --out pages.json
 
-# 2. Capture every page in the manifest
-figma-capture-batch --manifest pages.json
+figma-capture-batch --manifest pages.json --concurrency 4
 ```
 
-Per-page progress is persisted to a `pages.<fileKey>.status.json` next to
-the manifest, so re-running picks up where you stopped. See
-`figma-capture-batch --help` and `figma-capture-export-pages --help` for
-all flags.
+You can also hand-write `pages.json` for any framework.
 
-The exporter is Next.js App Router-specific today (it walks for `page.tsx`
-files, strips `(routegroup)` segments, preserves `[dynamic]` segments).
-You can also write `pages.json` by hand for any framework.
+### Resume + parallel
+
+Per-page progress is persisted to a `*.status.json` file. Re-running
+skips already-completed pages. Use `--force` to recapture everything.
+
+`--concurrency <n>` (1–8) runs N captures in parallel, each in its own
+Playwright Chromium. 4–6 is the sweet spot on a typical dev machine.
+
+## Claude Code skill
+
+Install the bundled skill so Claude Code can drive this CLI on the
+user's behalf without you having to explain it every conversation:
+
+```sh
+figma-capture-install-skill              # → ~/.claude/skills/figma-capture/SKILL.md
+figma-capture-install-skill --project    # → ./.claude/skills/figma-capture/SKILL.md
+figma-capture-install-skill --print      # stream SKILL.md to stdout
+```
+
+Restart Claude Code afterwards. The skill teaches Claude when to use
+each binary, how to extract `fileKey` from a Figma URL, when to fan out
+parallel captures, and the auth flow.
 
 ## How it works
 

@@ -1,14 +1,20 @@
 #!/usr/bin/env node
 /**
- * Batch-captures every page listed in a manifest (produced by export-pages.mjs)
- * into a Figma file. Handles retry, timeout, and resume via an adjacent
- * status file.
+ * Batch-captures multiple pages into a Figma file. Three input modes:
  *
- * Usage:
- *   node bin/batch.mjs --manifest pages.json
- *   node bin/batch.mjs --manifest pages.json --only business        # single module
- *   node bin/batch.mjs --manifest pages.json --retries 3 --retry-delay 4000
- *   node bin/batch.mjs --manifest pages.json --dry-run
+ *   1. Manifest file (produced by figma-capture-export-pages or hand-written):
+ *        figma-capture-batch --manifest pages.json
+ *
+ *   2. Sitemap auto-discovery (any framework with a sitemap.xml):
+ *        figma-capture-batch --file <FIGMA_FILE_KEY> \
+ *          --sitemap http://localhost:3000/sitemap.xml
+ *
+ *   3. Inline routes (one-liner, no file):
+ *        figma-capture-batch --file <FIGMA_FILE_KEY> \
+ *          --base-url http://localhost:3000 \
+ *          --routes "/,/dashboard,/billing"
+ *
+ * Handles retry, timeout, resume (status file), and optional concurrency.
  */
 import { Command } from 'commander';
 import { readFile, writeFile } from 'node:fs/promises';
@@ -18,12 +24,20 @@ import { ensureChromeCdp, ensurePlaywright } from '../src/browser.mjs';
 import { getCaptureTarget, pollCaptureResult } from '../src/mcp.mjs';
 import { runCapture } from '../src/capture.mjs';
 import { placeCapturedFrame, resolveAndCreateFreshPages } from '../src/figma-arrange.mjs';
+import { manifestFromRoutes, manifestFromSitemap } from '../src/manifest.mjs';
 
 const program = new Command();
 program
   .name('figma-capture-batch')
-  .description('Batch capture all pages from a pages.json manifest into Figma')
-  .requiredOption('-m, --manifest <file>', 'pages.json manifest path')
+  .description('Batch capture pages into Figma — from a manifest, sitemap, or inline route list')
+  .option('-m, --manifest <file>', 'pages.json manifest path (mode 1)')
+  .option('--sitemap <url>', 'sitemap.xml URL to auto-discover routes (mode 2)')
+  .option('--routes <list>', 'Comma-separated list of routes/URLs (mode 3)')
+  .option('-f, --file <fileKey>', 'Figma fileKey (required for --sitemap / --routes)')
+  .option('-b, --base-url <url>', 'Base URL (required for --routes; optional override for --sitemap)')
+  .option('--mobile-modules <list>', 'Modules to default to mobile viewport (--sitemap / --routes only)', '')
+  .option('--tablet-modules <list>', 'Modules to default to tablet viewport (--sitemap / --routes only)', '')
+  .option('--concurrency <n>', 'Number of pages to capture in parallel (1=sequential)', '1')
   .option('--only <module>', 'Capture only pages whose module matches (e.g. business)')
   .option('--limit <n>', 'Stop after N pages (for smoke tests)', '0')
   .option('--status <file>', 'Status file for resume (defaults next to manifest)')
@@ -153,21 +167,61 @@ async function captureWithRetry(page, ctx) {
   throw lastError;
 }
 
-async function main() {
-  const manifestPath = path.resolve(opts.manifest);
-
-  const manifest = await loadJson(manifestPath);
-  if (!manifest) {
-    console.error(`[batch] cannot read manifest: ${manifestPath}`);
-    process.exit(1);
+async function loadManifestFromOpts() {
+  const modes = [opts.manifest, opts.sitemap, opts.routes].filter(Boolean);
+  if (modes.length === 0) {
+    throw new Error('Pick one input mode: --manifest <file>, --sitemap <url>, or --routes <list>');
   }
+  if (modes.length > 1) {
+    throw new Error('Pick only one input mode: --manifest, --sitemap, or --routes (got multiple)');
+  }
+
+  if (opts.manifest) {
+    const manifestPath = path.resolve(opts.manifest);
+    const m = await loadJson(manifestPath);
+    if (!m) throw new Error(`cannot read manifest: ${manifestPath}`);
+    return { manifest: m, manifestPath };
+  }
+
+  if (opts.sitemap) {
+    if (!opts.file) throw new Error('--sitemap requires --file <fileKey>');
+    log(`fetching sitemap: ${opts.sitemap}`);
+    const m = await manifestFromSitemap({
+      fileKey: opts.file,
+      sitemapUrl: opts.sitemap,
+      baseUrl: opts.baseUrl,
+      mobileModules: opts.mobileModules,
+      tabletModules: opts.tabletModules,
+    });
+    log(`  discovered ${m.pages.length} routes (origin: ${m.baseUrl})`);
+    return { manifest: m, manifestPath: null };
+  }
+
+  // routes mode
+  if (!opts.file) throw new Error('--routes requires --file <fileKey>');
+  if (!opts.baseUrl) throw new Error('--routes requires --base-url <url>');
+  const routes = opts.routes.split(',').map((s) => s.trim()).filter(Boolean);
+  const m = manifestFromRoutes({
+    fileKey: opts.file,
+    baseUrl: opts.baseUrl,
+    routes,
+    mobileModules: opts.mobileModules,
+    tabletModules: opts.tabletModules,
+  });
+  log(`  built manifest from ${m.pages.length} inline route(s)`);
+  return { manifest: m, manifestPath: null };
+}
+
+async function main() {
+  const { manifest, manifestPath } = await loadManifestFromOpts();
 
   // Scope the status file by fileKey so captures for different Figma files
   // don't cross-contaminate (different file = unshared "completed" state).
   const shortKey = (manifest.fileKey || '').slice(0, 12) || 'unknown';
-  const statusPath = opts.status
-    ? path.resolve(opts.status)
-    : manifestPath.replace(/\.json$/, `.${shortKey}.status.json`);
+  const defaultStatusPath = manifestPath
+    ? manifestPath.replace(/\.json$/, `.${shortKey}.status.json`)
+    : path.resolve(`figma-capture-${shortKey}.status.json`);
+  const statusPath = opts.status ? path.resolve(opts.status) : defaultStatusPath;
 
   let status = await loadJson(statusPath);
   if (!status) status = { completed: {}, failed: {} };
@@ -269,27 +323,50 @@ async function main() {
     }
   }
 
+  const concurrency = Math.max(1, Math.min(8, Number(opts.concurrency) || 1));
+  if (concurrency > 1) log(`concurrency: ${concurrency} (parallel captures)`);
+
   let ok = 0;
   let fail = 0;
-  for (const [i, page] of todo.entries()) {
-    log(`[${i + 1}/${todo.length}] ${page.route} → ${page.figmaPage} / "${page.name}"`);
-    try {
-      const result = await captureWithRetry(page, ctx);
-      status.completed[page.route] = result;
-      delete status.failed[page.route];
-      ok++;
-    } catch (e) {
-      status.failed[page.route] = {
-        attempts: ctx.retries + 1,
-        lastError: String(e?.message ?? e),
-        timestamp: Date.now(),
-      };
-      fail++;
-      log(`  ✗ failed: ${e?.message ?? e}`);
+  let nextIndex = 0;
+  let writeChain = Promise.resolve();
+  const persistStatus = () => {
+    // Serialize writes so concurrent workers can't interleave file writes.
+    writeChain = writeChain.then(() =>
+      writeFile(statusPath, JSON.stringify(status, null, 2) + '\n', 'utf8').catch(() => {})
+    );
+    return writeChain;
+  };
+
+  async function worker(workerIdx) {
+    while (true) {
+      const i = nextIndex++;
+      if (i >= todo.length) return;
+      const page = todo[i];
+      const tag = concurrency > 1 ? `[w${workerIdx} ${i + 1}/${todo.length}]` : `[${i + 1}/${todo.length}]`;
+      log(`${tag} ${page.route} → ${page.figmaPage} / "${page.name}"`);
+      try {
+        const result = await captureWithRetry(page, ctx);
+        status.completed[page.route] = result;
+        delete status.failed[page.route];
+        ok++;
+      } catch (e) {
+        status.failed[page.route] = {
+          attempts: ctx.retries + 1,
+          lastError: String(e?.message ?? e),
+          timestamp: Date.now(),
+        };
+        fail++;
+        log(`  ✗ ${page.route} failed: ${e?.message ?? e}`);
+      }
+      await persistStatus();
     }
-    // Persist after every page so a crash mid-batch doesn't lose progress.
-    await writeFile(statusPath, JSON.stringify(status, null, 2) + '\n', 'utf8');
   }
+
+  await Promise.all(
+    Array.from({ length: concurrency }, (_, w) => worker(w + 1))
+  );
+  await writeChain; // ensure final status flush completes
 
   log(`done — ${ok} ok, ${fail} failed, status: ${statusPath}`);
   if (fail > 0) process.exitCode = 1;
